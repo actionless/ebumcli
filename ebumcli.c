@@ -6,6 +6,12 @@
 
 #include "ebur128.h"
 
+
+#define have_args(LONG_ARG, SHORT_ARG) ((strcmp(av[arg_offset], LONG_ARG) == 0) || (strcmp(av[arg_offset], SHORT_ARG) == 0))
+#define TRUE 1
+#define FALSE 0
+
+
 int measure_loudness(ebur128_state** sts, int i, const char* filename, double loudness) {
   sf_count_t nr_frames_read;
   double* buffer;
@@ -114,18 +120,18 @@ int main(int ac, const char* av[]) {
 	int TRUE_PEAK = 0;
 	int arg_offset = 1;
 
-  if ((ac < 2) || ((strcmp(av[1], "--help") == 0) || (strcmp(av[1], "-h") == 0))) {
+  if ((ac < 2) || have_args("--help", "-h")) {
     fprintf(stderr, "usage: %s [--tp/-t] FILENAME...\n", av[0]);
     exit(1);
   }
 
-  if ((strcmp(av[1], "--tp") == 0) || (strcmp(av[1], "-t") == 0)) {
-	  TRUE_PEAK = 1;
-	  arg_offset = 2;
+  if (have_args("--tp", "-t")) {
+	  TRUE_PEAK = TRUE;
+	  arg_offset++;
   }
 
   sts = malloc((size_t) (ac - arg_offset) * sizeof(ebur128_state*));
-  if (TRUE_PEAK == 1) {
+  if (TRUE_PEAK == TRUE) {
 	  sts_tp = malloc((size_t) (ac - arg_offset) * sizeof(ebur128_state*));
 	  if (!sts || !sts_tp) {
 		fprintf(stderr, "malloc failed\n");
@@ -137,7 +143,7 @@ int main(int ac, const char* av[]) {
 		fprintf(stderr, "%i\n", i);
 
 	measure_loudness(sts, i, av[i+arg_offset], loudness);
-	  if (TRUE_PEAK == 1) {
+	  if (TRUE_PEAK == TRUE) {
 		measure_true_peak(sts_tp, i, av[i+arg_offset]);
 		}
   }
@@ -150,7 +156,7 @@ int main(int ac, const char* av[]) {
     ebur128_destroy(&sts[i]);
   }
   free(sts);
-  if (TRUE_PEAK == 1) {
+  if (TRUE_PEAK == TRUE) {
 	  for (i = 0; i < ac - arg_offset; ++i) {
 		ebur128_destroy(&sts_tp[i]);
 	  }
