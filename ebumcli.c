@@ -6,14 +6,14 @@
 
 #include "ebur128.h"
 
-int measure_loudness(ebur128_state** sts, int i, const char* av[], double loudness) {
+int measure_loudness(ebur128_state** sts, int i, const char* filename, double loudness) {
   sf_count_t nr_frames_read;
   double* buffer;
   SF_INFO file_info;
   SNDFILE* file;
 
     memset(&file_info, '\0', sizeof(file_info));
-    file = sf_open(av[i + 1], SFM_READ, &file_info);
+    file = sf_open(filename, SFM_READ, &file_info);
     if (!file) {
       fprintf(stderr, "Could not open file with sf_open!\n");
       return 1;
@@ -48,7 +48,7 @@ int measure_loudness(ebur128_state** sts, int i, const char* av[], double loudne
     }
 
     ebur128_loudness_global(sts[i], &loudness);
-    fprintf(stderr, "%.2f LUFS, %s\n", loudness, av[i + 1]);
+    fprintf(stderr, "%.2f LUFS, %s\n", loudness, filename);
 
     free(buffer);
     buffer = NULL;
@@ -59,7 +59,7 @@ int measure_loudness(ebur128_state** sts, int i, const char* av[], double loudne
 	return 0;
 }
 
-int measure_true_peak(ebur128_state** sts, int i, const char* av[]) {
+int measure_true_peak(ebur128_state** sts, int i, const char* filename) {
   double true_peak;
   double max_true_peak = -DBL_MAX;
   int y;
@@ -69,7 +69,7 @@ int measure_true_peak(ebur128_state** sts, int i, const char* av[]) {
   SNDFILE* file;
 
     memset(&file_info, '\0', sizeof(file_info));
-    file = sf_open(av[i + 1], SFM_READ, &file_info);
+    file = sf_open(filename, SFM_READ, &file_info);
     if (!file) {
       fprintf(stderr, "Could not open file with sf_open!\n");
       return 1;
@@ -94,7 +94,7 @@ int measure_true_peak(ebur128_state** sts, int i, const char* av[]) {
 		max_true_peak = true_peak;
 	}
   }
-  fprintf(stderr, "%.2f TruePeak, %s\n", max_true_peak, av[i + 1]);
+  fprintf(stderr, "%.2f TruePeak, %s\n", max_true_peak, filename);
 
   free(buffer);
   buffer = NULL;
@@ -105,43 +105,57 @@ int measure_true_peak(ebur128_state** sts, int i, const char* av[]) {
   return 0;
 }
 
+
 int main(int ac, const char* av[]) {
   ebur128_state** sts = NULL;
   ebur128_state** sts_tp = NULL;
   double loudness = 0.0;
   int i;
+	int TRUE_PEAK = 0;
+	int arg_offset = 1;
 
   if (ac < 2) {
-    fprintf(stderr, "usage: %s FILENAME...\n", av[0]);
+    fprintf(stderr, "usage: %s [--tp/-t] FILENAME...\n", av[0]);
     exit(1);
   }
 
-  sts = malloc((size_t) (ac - 1) * sizeof(ebur128_state*));
-  sts_tp = malloc((size_t) (ac - 1) * sizeof(ebur128_state*));
-  if (!sts || !sts_tp) {
-    fprintf(stderr, "malloc failed\n");
-    return 1;
+  if ((strcmp(av[1], "--tp") == 0) || (strcmp(av[1], "-t") == 0)) {
+	  TRUE_PEAK = 1;
+	  arg_offset = 2;
   }
 
-  for (i = 0; i < ac - 1; ++i) {
+  sts = malloc((size_t) (ac - arg_offset) * sizeof(ebur128_state*));
+  if (TRUE_PEAK == 1) {
+	  sts_tp = malloc((size_t) (ac - arg_offset) * sizeof(ebur128_state*));
+	  if (!sts || !sts_tp) {
+		fprintf(stderr, "malloc failed\n");
+		return 1;
+	  }
+	}
 
-	measure_loudness(sts, i, av, loudness);
-	measure_true_peak(sts_tp, i, av);
+  for (i = 0; i < ac - arg_offset; ++i) {
+		fprintf(stderr, "%i\n", i);
 
+	measure_loudness(sts, i, av[i+arg_offset], loudness);
+	  if (TRUE_PEAK == 1) {
+		measure_true_peak(sts_tp, i, av[i+arg_offset]);
+		}
   }
 
-  ebur128_loudness_global_multiple(sts, (size_t) ac - 1, &loudness);
+  ebur128_loudness_global_multiple(sts, (size_t) ac - arg_offset, &loudness);
   fprintf(stderr, "-----------\n%.2f LUFS\n", loudness);
 
   /* clean up */
-  for (i = 0; i < ac - 1; ++i) {
+  for (i = 0; i < ac - arg_offset; ++i) {
     ebur128_destroy(&sts[i]);
   }
   free(sts);
-  for (i = 0; i < ac - 1; ++i) {
-    ebur128_destroy(&sts_tp[i]);
-  }
-  free(sts_tp);
+  if (TRUE_PEAK == 1) {
+	  for (i = 0; i < ac - arg_offset; ++i) {
+		ebur128_destroy(&sts_tp[i]);
+	  }
+	  free(sts_tp);
+	}
 
   return 0;
 }
