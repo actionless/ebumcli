@@ -114,7 +114,7 @@ int main(int ac, const char* av[]) {
 	int TRUE_PEAK = 0;
 	int arg_offset = 1;
 
-  if (ac < 2) {
+  if ((ac < 2) || ((strcmp(av[1], "--help") == 0) || (strcmp(av[1], "-h") == 0))) {
     fprintf(stderr, "usage: %s [--tp/-t] FILENAME...\n", av[0]);
     exit(1);
   }
