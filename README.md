@@ -1,6 +1,6 @@
 # ebumcli
 
-(EBU Meter CLI / EBU Mini CLI) - extremely minimalistic EBU R 128 LUFS and TruePeak meter CLI (using libebur128).
+(EBU Meter CLI / EBU Mini CLI) - extremely minimalistic EBU R 128 LUFS and TruePeak meter CLI.
 
 Tested on Linux and MacOS (Homebrew).
 
@@ -14,7 +14,13 @@ $ pikaur -S ebumcli-git
 $ ebumcli --help
 ```
 
+
 ### Other
+
+#### Dependencies
+
+ - libebur128
+ - libsndfile
 
 ```console
 $ make
