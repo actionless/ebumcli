@@ -1,1 +1,8 @@
+# dev stuff:
 ebumcli
+
+# pkgbuild stuff:
+pkg/
+src/
+ebumcli-git/
+ebumcli-*.pkg.*
