@@ -3,7 +3,7 @@
 
 _pkgname=ebumcli
 pkgname="${_pkgname}-git"
-pkgver=0.0.0.r14.eab6d4d
+pkgver=0.0.0.r18.07c2c91
 pkgrel=1
 pkgdesc="(EBU Meter CLI / EBU Mini CLI) - extremely minimalistic EBU R 128 LUFS and TruePeak meter CLI (using libebur128)"
 arch=('any')
@@ -35,6 +35,7 @@ pkgver() {
 
 build() {
 	cd "${srcdir}/${pkgname}" || exit 2
+	make clean
 	make
 }
 
