@@ -128,17 +128,24 @@ int main(int ac, const char* av[]) {
 	double loudness = 0.0;
 	double max_true_peak = -DBL_MAX;
 	int i;
-	int TRUE_PEAK = 0;
+	int TRUE_PEAK = FALSE;
+	int MEASURE_LUFS = TRUE;
 	int arg_offset = 1;
 	double current_true_peak = max_true_peak;
 
 	if ((ac < 2) || have_args("--help", "-h")) {
-		fprintf(stderr, "usage: %s [--tp/-t] FILENAME...\n", av[0]);
+		fprintf(stderr, "usage: %s [--tp/-t] [--tpo/-o] FILENAME...\n", av[0]);
 		exit(1);
 	}
 
 	if (have_args("--tp", "-t")) {
 		TRUE_PEAK = TRUE;
+		arg_offset++;
+	}
+
+	if (have_args("--tpo", "-o")) {
+		TRUE_PEAK = TRUE;
+		MEASURE_LUFS = FALSE;
 		arg_offset++;
 	}
 
@@ -151,27 +158,32 @@ int main(int ac, const char* av[]) {
 		}
 	}
 
+
 	for (i = 0; i < ac - arg_offset; ++i) {
 		fprintf(stderr, "%i\n", i);
-
-	measure_loudness(sts, i, av[i+arg_offset], loudness);
+		if (MEASURE_LUFS == TRUE) {
+			measure_loudness(sts, i, av[i+arg_offset], loudness);
+		}
 		if (TRUE_PEAK == TRUE) {
 			current_true_peak = measure_true_peak(sts_tp, i, av[i+arg_offset]);
 			if (current_true_peak > max_true_peak) max_true_peak = current_true_peak;
 		}
 	}
-
-	ebur128_loudness_global_multiple(sts, (size_t) ac - arg_offset, &loudness);
-	fprintf(stderr, "-----------\n%.2f LUFS\n", loudness);
+	if (MEASURE_LUFS == TRUE) {
+		ebur128_loudness_global_multiple(sts, (size_t) ac - arg_offset, &loudness);
+		fprintf(stderr, "-----------\n%.2f LUFS\n", loudness);
+	}
 	if (TRUE_PEAK == TRUE) {
 		fprintf(stderr, "-----------\n%.2f dB max TruePeak\n", max_true_peak);
 	}
 
 	/* clean up */
-	for (i = 0; i < ac - arg_offset; ++i) {
-		ebur128_destroy(&sts[i]);
+	if (MEASURE_LUFS == TRUE) {
+		for (i = 0; i < ac - arg_offset; ++i) {
+			ebur128_destroy(&sts[i]);
+		}
+		free(sts);
 	}
-	free(sts);
 	if (TRUE_PEAK == TRUE) {
 		for (i = 0; i < ac - arg_offset; ++i) {
 			ebur128_destroy(&sts_tp[i]);
